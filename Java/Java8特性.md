@@ -54,7 +54,6 @@ list.forEach((String s) -> System.out.println("*" + s + "*"));//只能这么写
      int compare(T o1, T o2); 
      boolean equals(Object obj); 
  }
- 
 ```
 
 如果一个类型被这个注解修饰，那么编译器会要求这个类型必须满足如下条件:

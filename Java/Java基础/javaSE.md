@@ -6572,7 +6572,7 @@ executorService.shutdown();
 
  **`ThreadLocal`本质上就是一个大Map集合Map<Thread,Object>**
 
-`ThreadLocal`理解 [](【JavaWeb视频教程，跟着老杜学javaweb零基础入门到精通】https://www.bilibili.com/video/BV1Z3411C7NZ?p=74&vd_source=df4529d9e18c20a7759796e70b88ca1c)
+`ThreadLocal`理解 [](https://www.bilibili.com/video/BV1Z3411C7NZ?p=74&vd_source=df4529d9e18c20a7759796e70b88ca1c)
 
 
 
