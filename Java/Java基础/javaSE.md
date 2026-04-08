@@ -6576,6 +6576,111 @@ executorService.shutdown();
 
 
 
+>想学习`ThreadLocal`，就需要先了解下`ThreadLocal`的结构
+
+``` java
+//ThreadLocal 类
+public class ThreadLocal<T> {
+    //ThreadLocalMap是ThreadLocal提供的静态内部类
+    static class ThreadLocalMap {
+		//成员变量 --- Entry --- ThreadLocalMap又提供了一个静态内部类
+        static class Entry extends WeakReference<ThreadLocal<?>> {
+            /** The value associated with this ThreadLocal. */
+            Object value;
+
+            Entry(ThreadLocal<?> k, Object v) {
+                super(k);
+                value = v;
+            }
+        }
+        //成员变量 --- Entry[] --- 真正储存数据的地方
+        private Entry[] table;
+        
+        //成员方法 --- set --- 向外暴露的API，就是ThreadLocal常用的存储数据的方法set
+        public void set(T value) {
+            //获取使用ThreadLocal的线程
+            Thread t = Thread.currentThread();
+            
+            ThreadLocalMap map = getMap(t);
+            if (map != null) {
+                map.set(this, value);
+            } else {
+                createMap(t, value);
+            }
+    	}
+        
+        /**
+        * @param 获取哪个线程的ThreadLocalMap
+        * @return 返回指定线程的ThreadLocalMap
+        */
+        ThreadLocalMap getMap(Thread t) {
+        	return t.threadLocals;
+        }
+        
+        /**
+        * 成员方法 --- set--- 这个方法是私有的，被上面公共set方法调用，内部实现过程隐藏起来
+        * @param key 主键是使用的ThreadLocal
+        * @param value 需要存储的数据
+        */
+        private void set(ThreadLocal<?> key, Object value) {
+
+            // We don't use a fast path as with get() because it is at
+            // least as common to use set() to create new entries as
+            // it is to replace existing ones, in which case, a fast
+            // path would fail more often than not.
+			
+            Entry[] tab = table;
+            int len = tab.length;
+            int i = key.threadLocalHashCode & (len-1);//计算key值在散列表中的位置
+
+            for (Entry e = tab[i];
+                 e != null;
+                 e = tab[i = nextIndex(i, len)]) {
+                if (e.refersTo(key)) {
+                    e.value = value;
+                    return;
+                }
+
+                if (e.refersTo(null)) {
+                    replaceStaleEntry(key, value, i);
+                    return;
+                }
+            }
+
+            tab[i] = new Entry(key, value);
+            int sz = ++size;
+            if (!cleanSomeSlots(i, sz) && sz >= threshold)
+                rehash();
+        }
+
+}
+```
+
+
+
+``` java
+//Thread 类
+public class Thread implements Runnable {
+    
+    /**
+    * 成员变量
+   	* 类型是ThreadLocal的静态内部类
+    */
+    ThreadLocal.ThreadLocalMap threadLocals = null;
+    
+}
+```
+
+
+
+总结：`ThreadLocal`是不是把数据存储在这个线程池里面，而是把数据存储在调用这个线程池的线程中，真正存储的位置在线程池的`ThreadLocalMap`对象中。
+
+看完底层源码，可以知道，在`ThreadLocal`的存储规则中，key是使用的`ThreadLocal`，也就是说，每个线程只能在一个`ThreadLocal`中存储一个数据。
+
+
+
+
+
 # 网络编程
 
 网络编程 ： 计算计跟计算机之间通过网络进行数据传输
