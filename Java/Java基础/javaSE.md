@@ -1,3 +1,11 @@
+
+
+
+
+https://xiaolincoding.com/interview/collections.html
+
+
+
 #  一 、对象与类
 
 什么是对象？
@@ -981,9 +989,7 @@ System.out.println(a2);//Asia/Aden
 
 
 
-
-
-
+---------------
 
 
 
@@ -993,9 +999,11 @@ System.out.println(a2);//Asia/Aden
 
 
 
-## 单链集合
+## 概念
 
 
+
+### 为什么数组的下标是从零开始的
 
 在学习之前，在这里补充一下会使用到的数据结构：
 
@@ -1007,7 +1015,57 @@ System.out.println(a2);//Asia/Aden
 
   > 如果寻址的索引从下标一开始，寻址公式就会变化，`baseAddress` + (i - 1) * `dataTypeSize`; 这里应该看出什么区别了吧，就是：i - 1.
   >
-  > 这里会让`cpu`额外多出一次减法运算。性能就没那么好了。
+  > **这里会让`cpu`额外多出一次减法运算。性能就没那么好了。**
+
+
+
+### 数组和集合的区别
+
+- 数组是固定长度的数据结构，一旦创建长度就无法改变；集合是动态长度的数据结构，可以根据需要动态增加或减少元素
+- 数组里存储的元素类型可以是基本数据类型也可以是引用数据类型；集合存储的元素类型必须是引用数据类型
+- 数组可以直接访问元素；集合有些类型可以直接访问元素，有些类型不可以直接访问，只能通过迭代器或者其他方法访问元素
+
+
+
+### 你用过哪些集合？说一说
+
+我用过的一些java集合：
+
+1. `ArrayList`： `ArrayList` 是一个动态数组，实现了 List 接口，支持动态增长。
+2. LinkedList ： LinkedList 是一个双向链表，也实现了 List 接口，支持快速的插入和删除操作。
+3. HashMap ： HashMap 是一个基于哈希表的 Map 实现，存储结构为键值对，通过键快速查找值。
+4. HashSet ： HashSet 是一个基于 HashMap 实现的单链集合，存储结构也是键值对，但是只把元素存储到键的位置，值的位置不存储。
+5. `TreeMap` ： 基于红黑树实现的有序Map集合，可以按照键的顺序进行排序。
+6. LinkedHashMap ： 是基于哈希表和双向链表实现的 Map 集合，保持插入顺序或者访问顺序。
+7. PriorityQueue： 优先队列，可以按照比较器或者元素的自然顺序进行排序，但是这个集合我一般都是在 LeetCode 刷题才会用到
+
+
+
+### 说说 Java 中的集合
+
+首先，Java 中的集合大致分为两类，一类是单列集合，另一类是双列集合
+
+单列集合又可以分为 List 集合和 Set 集合，双列集合就是 Map 集合系列
+
+
+
+List 集合是有序的 Collection，使用此接口可以做到精确地控制每个元素的插入位置，使用者可以通过索引访问 List 中的元素。常用的实现 List 的类有：ArrayList、LinkedList、Vector、Stack。
+
+
+
+Set 集合不允许存在重复的元素，与 List 集合不同，Set 集合中的元素顺序是无序的。常用的实现有：HashSet、LinkedHashSet、TreeSet。
+
+
+
+Map 是一个键值对集合，存储键、值和之间的映射。存储时，Key 是无序、唯一的；Value 是不要求有序、可以重复；
+
+Map 没有继承于 Collection 接口，从 Map 集合中检索元素时，只要给出键对象，就会返回对应的值对象。
+
+常用的实现有：TreeMap、HashMap、HashTable、LinkedHashMap、ConcurrentHashMap。
+
+
+
+## 单列集合
 
 
 
@@ -2322,7 +2380,7 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,boolean evict) {
 1.p == null
 	直接存储新元素
 2.p处有元素，接着进行判断
-	初始化节点 Node<K,V> e;
+	初始化节点 Node<K,V> e; e节点用来记录重复节点的位置（也就是哪个节点是重复的）
 	1.判断头节点是否重复，头节点相同, e = p
 	2.分支判断是链表还是红黑树
 		1.红黑树
@@ -3161,6 +3219,53 @@ keys.forEach(key->{
 
         m.forEach((key, value)-> System.out.println(key + "->" + value));
 ```
+
+
+
+## Java中线程安全的集合有哪些？
+
+在 `java.util` 包中线程安全的类主要有两个（还有些线程安全的集合在util的子包中），其他都是非线程安全的。
+
+- Vector：线程安全的动态数组，其内部方法基本都是经过`synchronized` 修饰的，如果不需要线程安全，并不建议使用该集合，因为同步会有额外的开销。Vector 内部是使用对象数组来保存数据，可以根据需要自动的增加容量，当数组已满时，会创建新的数组，并拷贝原有数组的数据。
+  ``` java
+  public class Vector<E>
+      extends AbstractList<E>
+      implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+  {
+      /**
+      * Vector集合真正存放数据的数组
+      * 看这个elementData元素的类型可以知道，Vector不能存储基本数据类型，只能存储引用数据类型
+  	*/
+      @SuppressWarnings("serial") // Conditionally serializable
+      protected Object[] elementData;
+  	
+      //其余代码省略
+  }
+  ```
+
+- `Hashtable`：线程安全的哈希表，Hashtable 的加锁方法是给每个方法都加上 synchronized 关键字，这样锁住的是整个 Table 对象，不支持 null 键和值，由于同步问题导致的性能开销，现在已经很少被推荐使用了，如果需要使用保证线程安全的哈希表，可以使用 ConcurrentHashMap 集合。
+
+  ``` java
+  public class Hashtable<K,V>
+      extends Dictionary<K,V>
+      implements Map<K,V>, Cloneable, java.io.Serializable {
+      
+      //Hashtable存储数据的底层数组
+      private transient Entry<?,?>[] table;
+  	
+      //其余代码省略
+  }
+  ```
+
+
+
+
+`java.util.concurrent`包中提供的都是线程安全的集合：
+
+并发Map：
+
+- ConcurrentHashMap：它和Hashtable二者的主要区别就是加锁的颗粒度不同，在 **JDK1.7，ConcurrentHashMap 加的是分段锁**，也就是 Segment 锁，每个 Segment 含有整个 table 的一部分，这样不同分段之间的并发操作就不会受到影响。在 **JDK1.8，它取消了 Segment 字段**，**直接在 table 元素上加锁，实现对每一行进行加锁**，进一步缩小了并发冲突的概率。对于 put 操作，如果 key 对应的数组元素为 null，则通过 CAS 操作将其设置为当前值。如果 key 对应的节点 value 不为 null，则对该节点使用 synchronized 关键字申请锁，然后进行操作。如果该put操作使得当前链表长度超过一定阈值，则将该链表转化成红黑树，从而提高寻址效率。
+- 
 
 
 
@@ -6569,6 +6674,10 @@ executorService.shutdown();
 ```
 
 
+
+
+
+### `ThreadLocal`
 
  **`ThreadLocal`本质上就是一个大Map集合Map<Thread,Object>**
 
