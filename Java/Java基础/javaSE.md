@@ -3264,8 +3264,19 @@ keys.forEach(key->{
 
 并发Map：
 
-- ConcurrentHashMap：它和Hashtable二者的主要区别就是加锁的颗粒度不同，在 **JDK1.7，ConcurrentHashMap 加的是分段锁**，也就是 Segment 锁，每个 Segment 含有整个 table 的一部分，这样不同分段之间的并发操作就不会受到影响。在 **JDK1.8，它取消了 Segment 字段**，**直接在 table 元素上加锁，实现对每一行进行加锁**，进一步缩小了并发冲突的概率。对于 put 操作，如果 key 对应的数组元素为 null，则通过 CAS 操作将其设置为当前值。如果 key 对应的节点 value 不为 null，则对该节点使用 synchronized 关键字申请锁，然后进行操作。如果该put操作使得当前链表长度超过一定阈值，则将该链表转化成红黑树，从而提高寻址效率。
-- 
+- **ConcurrentHashMap**：它和Hashtable二者的主要区别就是加锁的颗粒度不同，在 **JDK1.7，ConcurrentHashMap 加的是分段锁**，也就是 Segment 锁，每个 Segment 含有整个 table 的一部分，这样不同分段之间的并发操作就不会受到影响。在 **JDK1.8，它取消了 Segment 字段**，**直接在 table 元素上加锁，实现对每一行进行加锁**，进一步缩小了并发冲突的概率。对于 put 操作，如果 key 对应的数组元素为 null，则通过 CAS 操作将其设置为当前值。如果 key 对应的节点 value 不为 null，则对该节点使用 synchronized 关键字申请锁，然后进行操作。如果该put操作使得当前链表长度超过一定阈值，则将该链表转化成红黑树，从而提高寻址效率。
+- **ConcurrentSkipListMap**：实现了一个基于 SkipList （跳表）算法的可排序的并发集合， SkipList 是一种可以在对数组预期时间内完成搜索、插入、删除等操作的数据结构，通过维护多个指向其他元素的“跳跃”链接来实现高效查询。
+
+并发Set：
+
+- **ConcurrentSkipListSet**：是线程安全的有序的集合。底层是使用ConcurrentSkipListMap实现。
+- **CopyOnWriteArraySet**：是线程安全的Set实现，它是线程安全的无序的集合，可以将它理解成线程安全的HashSet。有意思的是，CopyOnWriteArraySet和HashSet虽然都继承于共同的父类AbstractSet；但是，HashSet是通过“散列表”实现的，而CopyOnWriteArraySet则是通过“动态数组(CopyOnWriteArrayList)”实现的，并不是散列表。
+
+并发 List：
+
+- CopyOnWriteArrayList：它是 ArrayList 线程安全的变体，其中所有写操作（add、set 等）都通过对底层数组进行全新复制来实现，允许存储 null 元素。当对象进行写操作时，使用 Lock 锁进行同步处理，内部拷贝了原数组，并在新数组上进行添加操作，最后将新数组替换掉旧数组；若进行读操作，则直接返回结果，操作过程中不需要进行同步。
+
+
 
 
 
