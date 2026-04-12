@@ -1458,6 +1458,72 @@ public class LinkedList<E>
 
 
 
+#### ArrayList 和 Vector 的区别
+
+ArrayList 和 Vector 都是 Java 中常见的动态数组实现，用于存储和操作对象的集合，但是它们在设计上有几个关键区别，主要体现在线程安全性、性能、功能细节上：
+
+**首先是线程安全性，这是最核心的区别**，Vector 是线程安全的，它的大部分方法（比如 add、remove、get 等）都被 synchronized 修饰，这意味着多线程环境下操作 Vector 时，不需要额外处理同步问题。而 ArrayList 没有任何同步机制，是非线程安全的，在多线程并发修改时可能会出现数据不一致的问题，比如抛出 ConcurrentModificationException 异常。
+
+正因为同步机制的存在，两者在性能上也有差异。由于 Vector 的方法需要加锁释放锁，在单线程环境下，它的操作效率通常比 ArrayList 低。所以如果是单线程场景，或者能自己保证线程安全的情况下，ArrayList 是更优的选择，性能更好。
+
+另外，在扩容机制上，两者也有所不同。当集合元素数量超过初始容量时，都会自动扩容。**Vector 默认的扩容策略是翻倍**（如果没有指定增长因子的话），比如初始容量 10，满了之后会扩容到 20。而 ArrayList 在 JDK 1.8 及之后，默认是扩容为原来的 1.5 倍，相对来说扩容的幅度更小，能在一定程度上节省内存空间。当然，Vector 也可以通过构造方法指定增长因子，灵活控制扩容幅度，而 ArrayList 没有这个功能。
+
+总的来说，选择两者时主要看是否需要线程安全：如果是多线程环境且需要内置同步支持，可能会用到 Vector；但现在更多时候会用 ArrayList，因为它性能更好，而且在需要线程安全时，可以通过Collections.synchronizedList () 方法将 ArrayList 包装成线程安全的集合，灵活性更高。
+
+
+
+### 线程安全的 List， CopyonWriteArraylist是如何实现线程安全的
+
+CopyOnWriteArrayList底层也是通过一个数组保存数据，使用volatile关键字修饰数组，保证当前线程对数组对象重新赋值后，其他线程可以及时感知到。
+
+``` java
+private transient volatile Object[] array;
+```
+
+在写入操作时，加了一把互斥锁ReentrantLock以保证线程安全。
+
+``` java
+	final transient Object lock = new Object();// CopyOnWriteArrayList 的成员变量
+	
+	// CopyOnWriteArrayList 成员方法
+	public boolean add(E e) {
+        synchronized (lock) {
+            Object[] es = getArray();
+            int len = es.length;
+            es = Arrays.copyOf(es, len + 1);
+            es[len] = e;
+            setArray(es);
+            return true;
+        }
+    }
+```
+
+看到源码可以知道写入新元素时，首先会先将原来的数组拷贝一份并且让原来数组的长度+1后就得到了一个新数组，新数组里的元素和旧数组的元素一样并且长度比旧数组多一个长度，然后将新加入的元素放置都在新数组最后一个位置后，用新数组的地址替换掉老数组的地址就能得到最新的数据了。在我们执行替换地址操作之前，读取的是老数组的数据，数据是有效数据；执行替换地址操作之后，读取的是新数组的数据，同样也是有效数据，而且使用该方式能比读写都加锁要更加的效率。
+
+
+
+##### CopyOnWriteArrayList 的扩容机制
+
+从上面的 add 方法可以看出来 CopyOnWriteArrayList 和ArrayList 的扩容机制是不一样的，ArrayList 的扩容是扩容为原来的一点五倍，但是CopyOnWriteArrayList 的扩容机制是每次添加元素都扩大一个位置，即不进行扩容，每次增加添加元素的时候，就在新数组（len + 1）的 len 位置赋值（len 是老数组的长度）。然后把新数组再赋值给老数组。
+
+
+
+
+
+现在我们来看读操作，读是没有加锁的，所以读是一直都能读
+
+``` java
+	public E get(int index) {
+        return elementAt(getArray(), index);
+    }
+```
+
+
+
+
+
+
+
 
 
 
@@ -3275,6 +3341,65 @@ keys.forEach(key->{
 并发 List：
 
 - CopyOnWriteArrayList：它是 ArrayList 线程安全的变体，其中所有写操作（add、set 等）都通过对底层数组进行全新复制来实现，允许存储 null 元素。当对象进行写操作时，使用 Lock 锁进行同步处理，内部拷贝了原数组，并在新数组上进行添加操作，最后将新数组替换掉旧数组；若进行读操作，则直接返回结果，操作过程中不需要进行同步。
+
+
+
+## Collections 和 Collection 的区别？
+
+- Collection 是 Java 集合框架中的一个接口，它是所有集合类的基础接口。它定义了一组通用的操作和方法，比如添加、删除、遍历等，用于操作和管理一组对象。Collection 接口有很多实现类，如 List 、 Set 、Queue 等。
+- Collections 是 Java 提供的一个工具类， 位于 java.util 包中。它提供了一系列静态方法，用于对集合进行操作和算法。Collections 类中的方法包括排序、查找、替换、反转、随机化等等。这些方法可以对实现了 Collection 接口的集合进行操作，如 List 和 Set。
+
+
+
+
+
+## 遍历集合的方法有哪些？
+
+1. **普通 for 循环**：可以使用带有索引的普通 for 循环来遍历 List。
+
+   ``` java
+   System.out.println("使用普通for循环");
+   for (int i = 0; i < list.size(); i++){
+       System.out.print(list.get(i) + " ");
+   }
+   ```
+
+2. **增强 for 循环**：用于循环访问数组或集合中的元素。（**底层是使用的迭代器来遍历**）
+
+   ``` java
+   System.out.println("使用增强for循环");
+   for (String s : list){
+       System.out.print(s + " ");
+   }
+   ```
+
+3. **使用 Iterator 迭代器遍历**：
+
+   ``` java
+   System.out.println("使用迭代器");
+   Iterator<String> iterator = list.iterator();
+   while(iterator.hasNext()){
+       System.out.print(iterator.next() + " ");
+   }
+   ```
+
+4. ListIterator 列表迭代器：ListIterator是迭代器的子类，可以双向访问列表并在迭代过程中修改元素。(代码几乎和 Iterator 迭代器遍历一样)
+
+5. **使用 for-each 方法**：Java 8引入的 for-each 方法，可以对集合进行快速遍历。(**底层源码就是使用普通 for 循环**)
+
+   ``` java
+   System.out.println("使用for-each遍历");
+   list.forEach(s -> System.out.print(s + " "));
+   ```
+
+6. **使用 stream 流进行遍历**：Java 8的Stream API提供了丰富的功能，可以对集合进行函数式操作，如过滤、映射等。
+
+   ``` java
+   System.out.println("使用stream流进行遍历");
+   list.stream().forEach(s -> System.out.print(s + " "));
+   ```
+
+这些是常用的集合遍历方式
 
 
 
